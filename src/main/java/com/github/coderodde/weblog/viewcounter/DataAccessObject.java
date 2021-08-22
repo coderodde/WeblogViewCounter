@@ -1,11 +1,13 @@
 package com.github.coderodde.weblog.viewcounter;
 
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.servlet.http.HttpServletRequest;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
 
@@ -23,9 +25,66 @@ public final class DataAccessObject {
     private static final String DB_URL_ENVIRONMENT_VARIABLE_NAME = 
             "CLEARDB_DATABASE_URL";
     
-    
+    /**
+     * Makes sure that the main table is created.
+     * 
+     * @throws CannotCreateMainTableException if cannot create the table.
+     */
     public void createTablesIfNeeded() throws CannotCreateMainTableException {
         createMainTableIfNeeded();
+    }
+    
+    /**
+     * Adds a new view data to the database.
+     * 
+     * @param httpServletRequest the request object.
+     * @throws SQLException if the SQL layer fails.
+     */
+    public void addView(HttpServletRequest httpServletRequest) 
+            throws SQLException {
+        
+        String host = httpServletRequest.getRemoteHost();
+        int port = httpServletRequest.getRemotePort();
+        String remoteAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+        
+        if (remoteAddress == null) {
+            remoteAddress = httpServletRequest.getRemoteAddr();
+        }
+        
+        try (Connection connection = getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(
+                             SQLStatements.MainTable.Insert.INSERT_VIEW)) {
+            
+            statement.setString(1, remoteAddress);
+            statement.setString(2, host);
+            statement.setInt(3, port);
+            statement.executeUpdate();
+        }
+    }
+    
+    /**
+     * Returns the total number of views. 
+     */
+    public JSONResponseObject getViewCount() {
+        JSONResponseObject jsonResponseObject = new JSONResponseObject();
+        
+        try (Connection connection = getConnection();
+             Statement statement = connection.createStatement()) {
+            
+            try (ResultSet resultSet =
+                    statement.executeQuery(DB_URL_ENVIRONMENT_VARIABLE_NAME)) {
+                
+                int numberOfViews = resultSet.getInt(1);
+                
+                jsonResponseObject.succeeeded = true;
+                jsonResponseObject.numberOfViews = numberOfViews;
+            }
+        } catch (SQLException ex) {
+            jsonResponseObject.succeeeded = false;
+        }
+        
+        return jsonResponseObject;
     }
     
     private static void initializeDataSource() {
@@ -131,6 +190,12 @@ public final class DataAccessObject {
                                       .MainTable.Create
                                       .CREATET_MAIN_TABLE);
         } catch (SQLException cause) {
+            LOGGER.log(
+                    Level.SEVERE, 
+                    "The SQL layer failed: {0}, caused by: {1}", 
+                    objects(cause.getMessage(), 
+                            cause.getCause()));
+            
             CannotCreateMainTableException ex = 
                     new CannotCreateMainTableException(
                             "Cannot create the main table 'view'.", 
