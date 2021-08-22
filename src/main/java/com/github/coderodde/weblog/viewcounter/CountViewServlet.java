@@ -1,8 +1,10 @@
 package com.github.coderodde.weblog.viewcounter;
 
+import com.google.gson.Gson;
+import java.io.IOException;
 import java.io.PrintWriter;
-import java.util.logging.Level;
-import java.util.logging.Logger ;
+import java.sql.SQLException;
+import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -18,33 +20,25 @@ import javax.servlet.http.HttpServletResponse;
  */
 @WebServlet(name="CountViewServlet", urlPatterns={"/countView"})
 public final class CountViewServlet extends HttpServlet {
-   
-    private final Logger LOGGER = 
-            Logger.getLogger(CountViewServlet.class.getName());
+    
+    private static final Gson GSON = new Gson();
     
     @Override
-    protected void doGet(HttpServletRequest httpServletRequest,
-                         HttpServletResponse httpServletResponse) {
+    protected void doPost(HttpServletRequest httpServletRequest,
+                         HttpServletResponse httpServletResponse) 
+    throws ServletException, IOException {
+        DataAccessObject dataAccessObject = new DataAccessObject();
+        JSONResponseObject jsonResponseObject;
+        
+        try {
+            dataAccessObject.addView(httpServletRequest);
+            jsonResponseObject = dataAccessObject.getViewCount();
+        } catch (SQLException ex) {
+            jsonResponseObject = new JSONResponseObject();
+        }
+        
         try (PrintWriter printWriter = httpServletResponse.getWriter()) {
-            printWriter.println(httpServletRequest.getRemoteAddr());
-            printWriter.println(httpServletRequest.getRemoteHost());
-            printWriter.println(httpServletRequest.getRemotePort());
-            printWriter.println(httpServletRequest.getRemoteUser());
-            printWriter.flush();
-        } catch (Exception ex) {
-            String message = ex.getMessage();
-            String causeMessage = ex.getCause() != null ?
-                    ex.getCause().getMessage() : 
-                    "<unknown cause>";
-            
-            LOGGER.log(
-                    Level.SEVERE, 
-                    "Failure: {0}, caused by: {1}", 
-                    new String[]{
-                        message,
-                        causeMessage,
-                    }
-            );
+            printWriter.print(GSON.toJson(jsonResponseObject));
         }
     }
 }

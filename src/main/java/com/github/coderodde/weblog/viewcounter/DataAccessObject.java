@@ -5,6 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.sql.Timestamp;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletRequest;
@@ -21,6 +24,8 @@ public final class DataAccessObject {
     
     private static final Logger LOGGER = 
             Logger.getLogger(DataAccessObject.class.getName());
+    
+    private static final String EUROPE_HELSINKI_ZONE_ID = "Europe/Helsinki";
     
     private static final String DB_URL_ENVIRONMENT_VARIABLE_NAME = 
             "CLEARDB_DATABASE_URL";
@@ -59,6 +64,14 @@ public final class DataAccessObject {
             statement.setString(1, remoteAddress);
             statement.setString(2, host);
             statement.setInt(3, port);
+            
+            ZonedDateTime nowZonedDateTime = 
+                    ZonedDateTime.now(ZoneId.of(EUROPE_HELSINKI_ZONE_ID));
+            
+            Timestamp nowTimestamp = 
+                    Timestamp.from(nowZonedDateTime.toInstant());
+            
+            statement.setTimestamp(4, nowTimestamp);
             statement.executeUpdate();
         }
     }

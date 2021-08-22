@@ -53,8 +53,9 @@ public final class SQLStatements {
                     "INSERT INTO `" + SQLDefinitions.ViewTable.NAME + "` (\"" +
                     SQLDefinitions.ViewTable.IPAddress.NAME + "\", " +
                     SQLDefinitions.ViewTable.HostName.NAME + "\", " +
-                    SQLDefinitions.ViewTable.PortNumber.NAME + "\") VALUES " + 
-                    "(?, ?, ?);";
+                    SQLDefinitions.ViewTable.PortNumber.NAME + "\", " +
+                    SQLDefinitions.ViewTable.ViewTimestamp.NAME + "\") " +
+                    "VALUES (?, ?, ?, ?);";
         }
         
         /**
