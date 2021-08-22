@@ -1,7 +1,10 @@
 package com.github.coderodde.weblog.viewcounter;
 
 import static com.github.coderodde.weblog.viewcounter.Utils.objs;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -11,6 +14,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javassist.CannotCompileException;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.tomcat.jdbc.pool.DataSource;
 import org.apache.tomcat.jdbc.pool.PoolProperties;
@@ -38,18 +42,27 @@ public final class DataAccessObject {
         return INSTANCE;
     }
     
-    private Connection getConnection() throws SQLException {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException ex) {
-            LOGGER.log(
-                    Level.SEVERE, 
-                    "Could not create a database connection: {0}, " +
-                            "caused by: {1}", 
-                    objs(ex.getMessage(), ex.getCause()));
-            
-            throw ex;
-        }
+    private Connection getConnection() throws SQLException, URISyntaxException {
+        URI databaseURI = 
+                new URI(System.getenv(DB_URL_ENVIRONMENT_VARIABLE_NAME));
+        
+        String username = databaseURI.getUserInfo().split(":")[0];
+        String password = databaseURI.getUserInfo().split(":")[1];
+        String databaseURL = "jdbc:mysql://" + databaseURI.getHost() + databaseURI.getPath();
+        
+        return DriverManager.getConnection(databaseURL, username, password);
+        
+//        try {
+//            return dataSource.getConnection();
+//        } catch (SQLException ex) {
+//            LOGGER.log(
+//                    Level.SEVERE, 
+//                    "Could not create a database connection: {0}, " +
+//                            "caused by: {1}", 
+//                    objs(ex.getMessage(), ex.getCause()));
+//            
+//            throw ex;
+//        }
     }
     
     /**
@@ -68,7 +81,7 @@ public final class DataAccessObject {
      * @throws SQLException if the SQL layer fails.
      */
     public void addView(HttpServletRequest httpServletRequest) 
-            throws SQLException {
+            throws SQLException, URISyntaxException {
         
         String host = httpServletRequest.getRemoteHost();
         int port = httpServletRequest.getRemotePort();
@@ -108,7 +121,16 @@ public final class DataAccessObject {
              Statement statement = connection.createStatement()) {
             
             try (ResultSet resultSet =
-                    statement.executeQuery(DB_URL_ENVIRONMENT_VARIABLE_NAME)) {
+                    statement.executeQuery(
+                            SQLStatements
+                                    .MainTable
+                                    .Select
+                                    .GET_NUMBER_OF_VIEWS)) {
+                
+                if (!resultSet.next()) {
+                    throw new IllegalStateException(
+                            "Could not read the number of views.");
+                }
                 
                 int numberOfViews = resultSet.getInt(1);
                 
@@ -117,44 +139,46 @@ public final class DataAccessObject {
             }
         } catch (SQLException ex) {
             jsonResponseObject.succeeeded = false;
+        } catch (URISyntaxException ex) {
+            jsonResponseObject.succeeeded = false;
         }
         
         return jsonResponseObject;
     }
     
-    private static void initializeDataSource() {
-        
-        PoolProperties p = new PoolProperties();
-        p.setCommitOnReturn(true);
-        p.setDefaultAutoCommit(true);
-        p.setDriverClassName("com.mysql.cj.jdbc.Driver");
-        p.setFairQueue(true);
-        p.setMaxActive(5);
-        p.setMaxAge(10000_000L);
-        p.setMaxIdle(5);
-        p.setMaxWait(600000_000);
-        p.setMinEvictableIdleTimeMillis(60000_000);
-        p.setMinIdle(0);
-        p.setRemoveAbandoned(true);
-        p.setRemoveAbandonedTimeout(6000);
-        p.setLogAbandoned(true);
-        p.setSuspectTimeout(3000000);
-        p.setTestOnBorrow(false);
-        p.setTestOnConnect(false);
-        p.setTestOnReturn(false);
-        p.setTestWhileIdle(true);
-        
-        String url = "jdbc:" + System.getenv(DB_URL_ENVIRONMENT_VARIABLE_NAME);
-        
-        p.setUrl(url);
-        p.setUseDisposableConnectionFacade(false);
-        p.setUseLock(false);
-        p.setUseStatementFacade(false);
-        p.setValidationQuery("SELECT 1");
-        p.setValidationQueryTimeout(-1); // This is the default value.
-        
-        dataSource.setPoolProperties(p);
-    } 
+//    private static void initializeDataSource() {
+//        
+//        PoolProperties p = new PoolProperties();
+//        p.setCommitOnReturn(true);
+//        p.setDefaultAutoCommit(true);
+//        p.setDriverClassName("com.mysql.cj.jdbc.Driver");
+//        p.setFairQueue(true);
+//        p.setMaxActive(5);
+//        p.setMaxAge(10000_000L);
+//        p.setMaxIdle(5);
+//        p.setMaxWait(600000_000);
+//        p.setMinEvictableIdleTimeMillis(60000_000);
+//        p.setMinIdle(0);
+//        p.setRemoveAbandoned(true);
+//        p.setRemoveAbandonedTimeout(6000);
+//        p.setLogAbandoned(true);
+//        p.setSuspectTimeout(3000000);
+//        p.setTestOnBorrow(false);
+//        p.setTestOnConnect(false);
+//        p.setTestOnReturn(false);
+//        p.setTestWhileIdle(true);
+//        
+//        String url = "jdbc:" + System.getenv(DB_URL_ENVIRONMENT_VARIABLE_NAME);
+//        
+//        p.setUrl(url);
+//        p.setUseDisposableConnectionFacade(false);
+//        p.setUseLock(false);
+//        p.setUseStatementFacade(false);
+//        p.setValidationQuery("SELECT 1");
+//        p.setValidationQueryTimeout(-1); // This is the default value.
+//        
+//        dataSource.setPoolProperties(p);
+//    } 
     
     private static void loadJDBCDriverClass() {
         try {
@@ -195,7 +219,7 @@ public final class DataAccessObject {
     }
     
     static {
-        initializeDataSource();
+//        initializeDataSource();
         loadJDBCDriverClass();
     }
     
@@ -219,6 +243,19 @@ public final class DataAccessObject {
                     new CannotCreateMainTableException(
                             "Cannot create the main table 'view'.", 
                             cause);
+            
+            throw ex;
+        } catch (URISyntaxException cause) {
+            LOGGER.log(
+                    Level.SEVERE, 
+                    "URI failed: {0}, caused by: {1}", 
+                    objs(cause.getMessage(), cause.getCause()));
+            
+            CannotCreateMainTableException ex = 
+                    new CannotCreateMainTableException(
+                            "Cannot create the main table '" + 
+                                    SQLDefinitions.ViewTable.NAME + 
+                                    "'.", cause);
             
             throw ex;
         }

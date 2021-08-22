@@ -4,6 +4,7 @@ import static com.github.coderodde.weblog.viewcounter.Utils.objs;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -49,6 +50,8 @@ public final class CountViewServlet extends HttpServlet {
                          ex.getCause().getMessage()));
             
             jsonResponseObject = new JSONResponseObject();
+        } catch (URISyntaxException ex) {
+            
         }
         
         try (PrintWriter printWriter = httpServletResponse.getWriter()) {

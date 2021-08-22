@@ -50,11 +50,11 @@ public final class SQLStatements {
              * Inserts a new view into the database.
              */
             public static final String INSERT_VIEW = 
-                    "INSERT INTO `" + SQLDefinitions.ViewTable.NAME + "` (\"" +
-                    SQLDefinitions.ViewTable.IPAddress.NAME + "\", " +
-                    SQLDefinitions.ViewTable.HostName.NAME + "\", " +
-                    SQLDefinitions.ViewTable.PortNumber.NAME + "\", " +
-                    SQLDefinitions.ViewTable.ViewTimestamp.NAME + "\") " +
+                    "INSERT INTO `" + SQLDefinitions.ViewTable.NAME + "` (" +
+                    SQLDefinitions.ViewTable.IPAddress.NAME + ", " +
+                    SQLDefinitions.ViewTable.HostName.NAME + ", " +
+                    SQLDefinitions.ViewTable.PortNumber.NAME + ", " +
+                    SQLDefinitions.ViewTable.ViewTimestamp.NAME + ") " +
                     "VALUES (?, ?, ?, ?);";
         }
         
@@ -67,7 +67,7 @@ public final class SQLStatements {
              * Returns the total number of views. 
              */
             public static final String GET_NUMBER_OF_VIEWS = 
-                    "SELECT COUNT(*) FROM ´" + SQLDefinitions.ViewTable.NAME +
+                    "SELECT COUNT(*) FROM `" + SQLDefinitions.ViewTable.NAME +
                     "`;";
         }
     }
