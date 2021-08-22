@@ -23,10 +23,10 @@ public final class SQLStatements {
              * Creates a table for storing the views unless there is one already
              * in the database.
              */
-            public static final String CREATET_MAIN_TABLE = 
-                    "CREATE TABLE IF NOT EXISSTS `" + 
+            public static final String CREATE_MAIN_TABLE = 
+                    "CREATE TABLE IF NOT EXISTS `" + 
                     SQLDefinitions.ViewTable.NAME + 
-                    "` (" +
+                    "` (\n" +
                     SQLDefinitions.ViewTable.Id.NAME + " " +
                     SQLDefinitions.ViewTable.Id.TYPE + ",\n" +
                     SQLDefinitions.ViewTable.IPAddress.NAME + " " + 

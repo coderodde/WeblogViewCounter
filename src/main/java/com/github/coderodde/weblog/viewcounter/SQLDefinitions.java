@@ -61,8 +61,7 @@ public final class SQLDefinitions {
          */
         public static final class ViewTimestamp {
             public static final String NAME = "viewed_at";
-            public static final String TYPE = 
-                    "TIMESTAMP NOT NULL DEFAULT NOW()";
+            public static final String TYPE = "TIMESTAMP NOT NULL";
         }
     }
 }

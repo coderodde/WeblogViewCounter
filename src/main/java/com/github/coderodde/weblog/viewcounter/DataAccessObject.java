@@ -1,5 +1,6 @@
 package com.github.coderodde.weblog.viewcounter;
 
+import static com.github.coderodde.weblog.viewcounter.Utils.objs;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -29,6 +30,27 @@ public final class DataAccessObject {
     
     private static final String DB_URL_ENVIRONMENT_VARIABLE_NAME = 
             "CLEARDB_DATABASE_URL";
+    
+    private static final DataSource dataSource = new DataSource();
+    private static final DataAccessObject INSTANCE = new DataAccessObject();
+    
+    public static DataAccessObject getInstance() {
+        return INSTANCE;
+    }
+    
+    private Connection getConnection() throws SQLException {
+        try {
+            return dataSource.getConnection();
+        } catch (SQLException ex) {
+            LOGGER.log(
+                    Level.SEVERE, 
+                    "Could not create a database connection: {0}, " +
+                            "caused by: {1}", 
+                    objs(ex.getMessage(), ex.getCause()));
+            
+            throw ex;
+        }
+    }
     
     /**
      * Makes sure that the main table is created.
@@ -122,28 +144,27 @@ public final class DataAccessObject {
         p.setTestOnReturn(false);
         p.setTestWhileIdle(true);
         
-        p.setUrl("jdbc:" + System.getenv(DB_URL_ENVIRONMENT_VARIABLE_NAME));
+        String url = "jdbc:" + System.getenv(DB_URL_ENVIRONMENT_VARIABLE_NAME);
+        
+        p.setUrl(url);
         p.setUseDisposableConnectionFacade(false);
         p.setUseLock(false);
         p.setUseStatementFacade(false);
         p.setValidationQuery("SELECT 1");
         p.setValidationQueryTimeout(-1); // This is the default value.
         
-        dataSource = new DataSource();
         dataSource.setPoolProperties(p);
     } 
     
-    private static DataSource dataSource;
-    
-    static {
+    private static void loadJDBCDriverClass() {
         try {
-            Class.forName("com.mysql.oj.jdbc.Driver").newInstance();
+            Class.forName("com.mysql.cj.jdbc.Driver").newInstance();
         } catch (ClassNotFoundException ex) {
             LOGGER.log(
                     Level.SEVERE, 
                     "com.mysql.cj.jdbc.Driver class not found: {0}, " + 
                             "caused by: {1}", 
-                    objects(ex, ex.getCause()));
+                    objs(ex, ex.getCause()));
             
             throw new RuntimeException(
                     "com.mysql.cj.jdbc.Driver not found.", 
@@ -154,7 +175,7 @@ public final class DataAccessObject {
                     Level.SEVERE, 
                     "com.mysql.cj.jdbc.Driver could not be instantiated: {0}," +
                             " caused by: {1}", 
-                    objects(ex, ex.getCause()));
+                    objs(ex, ex.getCause()));
             
             throw new RuntimeException(
                     "com.mysql.cj.jdbc.Driver could not be instantiated.", 
@@ -165,32 +186,17 @@ public final class DataAccessObject {
                     Level.SEVERE, 
                     "com.mysql.cj.jdbc.Driver could not be accessed: {0}, " + 
                             "caused by: {1}", 
-                    objects(ex, ex.getCause()));
+                    objs(ex, ex.getCause()));
             
             throw new RuntimeException(
                     "com.mysql.cj.jdbc.Driver could not be accessed.", 
                     ex);
         }
-        
+    }
+    
+    static {
         initializeDataSource();
-    }
-    
-    private Connection getConnection() throws SQLException {
-        try {
-            return dataSource.getConnection();
-        } catch (SQLException ex) {
-            LOGGER.log(
-                    Level.SEVERE, 
-                    "Could not create a database connection: {0}, " +
-                            "caused by: {1}", 
-                    objects(ex.getMessage(), ex.getCause()));
-            
-            throw ex;
-        }
-    }
-    
-    private static Object[] objects(Object... objects) {
-        return objects;
+        loadJDBCDriverClass();
     }
     
     private void createMainTableIfNeeded()
@@ -198,16 +204,16 @@ public final class DataAccessObject {
         
         try (Connection connection = getConnection()) {
             connection.createStatement()
-                      .executeUpdate(
-                              SQLStatements
-                                      .MainTable.Create
-                                      .CREATET_MAIN_TABLE);
+                      .executeUpdate(SQLStatements
+                                      .MainTable
+                                      .Create
+                                      .CREATE_MAIN_TABLE);
+            
         } catch (SQLException cause) {
             LOGGER.log(
                     Level.SEVERE, 
                     "The SQL layer failed: {0}, caused by: {1}", 
-                    objects(cause.getMessage(), 
-                            cause.getCause()));
+                    objs(cause.getMessage(), cause.getCause()));
             
             CannotCreateMainTableException ex = 
                     new CannotCreateMainTableException(

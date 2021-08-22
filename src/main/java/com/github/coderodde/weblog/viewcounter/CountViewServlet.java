@@ -1,9 +1,12 @@
 package com.github.coderodde.weblog.viewcounter;
 
+import static com.github.coderodde.weblog.viewcounter.Utils.objs;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.sql.SQLException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -22,18 +25,29 @@ import javax.servlet.http.HttpServletResponse;
 public final class CountViewServlet extends HttpServlet {
     
     private static final Gson GSON = new Gson();
+    private static final Logger LOGGER =
+            Logger.getLogger(CountViewServlet.class.getName());
     
     @Override
-    protected void doPost(HttpServletRequest httpServletRequest,
+    protected void doGet(HttpServletRequest httpServletRequest,
                          HttpServletResponse httpServletResponse) 
     throws ServletException, IOException {
-        DataAccessObject dataAccessObject = new DataAccessObject();
-        JSONResponseObject jsonResponseObject;
+        DataAccessObject dataAccessObject = DataAccessObject.getInstance();
+        JSONResponseObject jsonResponseObject = null;
         
         try {
-            dataAccessObject.addView(httpServletRequest);
+            dataAccessObject.createTablesIfNeeded();
+            dataAccessObject.addView(httpServletRequest); 
             jsonResponseObject = dataAccessObject.getViewCount();
         } catch (SQLException ex) {
+            jsonResponseObject = new JSONResponseObject();
+        } catch (CannotCreateMainTableException ex) {
+            LOGGER.log(
+                    Level.SEVERE, 
+                    "Could not create the main table: {0}, caused by: {1}", 
+                    objs(ex.getMessage(), 
+                         ex.getCause().getMessage()));
+            
             jsonResponseObject = new JSONResponseObject();
         }
         
