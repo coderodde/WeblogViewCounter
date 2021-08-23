@@ -46,32 +46,43 @@ public final class DataAccessObject {
         return INSTANCE;
     }
     
-    private Connection getConnection() throws SQLException, URISyntaxException {
-        URI databaseURI = 
-                new URI(System.getenv(DB_URL_ENVIRONMENT_VARIABLE_NAME));
-        
-        String username = databaseURI.getUserInfo().split(":")[0];
-        String password = databaseURI.getUserInfo().split(":")[1];
-        String databaseURL = 
-                "jdbc:mysql://" + databaseURI.getHost() + databaseURI.getPath();
-        
-        return DriverManager.getConnection(databaseURL, username, password);
-    }
-    
     /**
      * Makes sure that the main table is created.
      * 
      * @throws CannotCreateMainTableException if cannot create the table.
      */
     public void createTablesIfNeeded() throws CannotCreateMainTableException {
-        createMainTableIfDoesNotExist();
+        
+        try (Connection connection = getConnection()) {
+            connection.createStatement()
+                      .executeUpdate(SQLStatements
+                                      .ViewTable
+                                      .Create
+                                      .CREATE_MAIN_TABLE);
+            
+        } catch (SQLException cause) {
+            LOGGER.log(
+                    Level.SEVERE, 
+                    "The SQL layer failed: {0}, caused by: {1}", 
+                    objs(cause.getMessage(), cause.getCause()));
+            
+            throw new CannotCreateMainTableException(cause);
+        } catch (URISyntaxException cause) {
+            LOGGER.log(
+                    Level.SEVERE, 
+                    "URI failed: {0}, caused by: {1}", 
+                    objs(cause.getMessage(), cause.getCause()));
+            
+            throw new CannotCreateMainTableException(cause);
+        }
     }
     
     /**
      * Adds a new view data to the database.
      * 
      * @param httpServletRequest the request object.
-     * @throws SQLException if the SQL layer fails.
+     * @throws com.github.coderodde.weblog.viewcounter.exceptions.CannotAddViewException
+     * if adding a view data fails.
      */
     public void addView(HttpServletRequest httpServletRequest) 
             throws CannotAddViewException {
@@ -107,6 +118,9 @@ public final class DataAccessObject {
     
     /**
      * Returns the total number of views. 
+     * @return the total number of views so far.
+     * @throws com.github.coderodde.weblog.viewcounter.exceptions.CannotGetNumberOfViewsException
+     * if cannot get the number of views.
      */
     public int getViewCount() throws CannotGetNumberOfViewsException {
         try (Connection connection = getConnection();
@@ -131,6 +145,12 @@ public final class DataAccessObject {
         }
     }
     
+    /**
+     * Returns the most recent view time stamp.
+     * @return the most recent view time.
+     * @throws CannotGetMostRecenetViewTimeException if reading the most recent
+     * view time fails.
+     */
     public ZonedDateTime getMostRecentViewTime() 
             throws CannotGetMostRecenetViewTimeException {
         try (Connection connection = getConnection();
@@ -204,30 +224,15 @@ public final class DataAccessObject {
         loadJDBCDriverClass();
     }
     
-    private void createMainTableIfDoesNotExist()
-            throws CannotCreateMainTableException {
+    private Connection getConnection() throws SQLException, URISyntaxException {
+        URI databaseURI = 
+                new URI(System.getenv(DB_URL_ENVIRONMENT_VARIABLE_NAME));
         
-        try (Connection connection = getConnection()) {
-            connection.createStatement()
-                      .executeUpdate(SQLStatements
-                                      .ViewTable
-                                      .Create
-                                      .CREATE_MAIN_TABLE);
-            
-        } catch (SQLException cause) {
-            LOGGER.log(
-                    Level.SEVERE, 
-                    "The SQL layer failed: {0}, caused by: {1}", 
-                    objs(cause.getMessage(), cause.getCause()));
-            
-            throw new CannotCreateMainTableException(cause);
-        } catch (URISyntaxException cause) {
-            LOGGER.log(
-                    Level.SEVERE, 
-                    "URI failed: {0}, caused by: {1}", 
-                    objs(cause.getMessage(), cause.getCause()));
-            
-            throw new CannotCreateMainTableException(cause);
-        }
+        String username = databaseURI.getUserInfo().split(":")[0];
+        String password = databaseURI.getUserInfo().split(":")[1];
+        String databaseURL = 
+                "jdbc:mysql://" + databaseURI.getHost() + databaseURI.getPath();
+        
+        return DriverManager.getConnection(databaseURL, username, password);
     }
 }
