@@ -42,7 +42,8 @@ public final class CountViewServlet extends HttpServlet {
             ZonedDateTime mostRecentViewZonedDateTime = 
                     dataAccessObject.getMostRecentViewTime();
             
-            jsonResponseObject.mostRecentViewTime = mostRecentViewZonedDateTime;
+            jsonResponseObject.mostRecentViewTime = 
+                    mostRecentViewZonedDateTime.toString();
                     
         } catch (CannotCreateMainTableException ex) {
             LOGGER.log(
