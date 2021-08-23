@@ -29,8 +29,8 @@ public final class CountViewServlet extends HttpServlet {
             Logger.getLogger(CountViewServlet.class.getName());
     
     @Override
-    protected void doGet(HttpServletRequest httpServletRequest,
-                         HttpServletResponse httpServletResponse) 
+    protected void doPost(HttpServletRequest httpServletRequest,
+                          HttpServletResponse httpServletResponse) 
     throws ServletException, IOException {
         DataAccessObject dataAccessObject = DataAccessObject.getInstance();
         JSONResponseObject jsonResponseObject = null;
