@@ -52,10 +52,11 @@ public final class CountViewServlet extends HttpServlet {
             dataAccessObject.addView(httpServletRequest); 
             jsonResponseObject.numberOfViews = dataAccessObject.getViewCount();
             
+            // Mark as successful:
             jsonResponseObject.succeeded = true;
             
-            httpServletResponse.setHeader("Access-Control-Allow-Origin", 
-                                          "http://coderodde.github.io");
+            // Allow the weblog page to get the response from this servlet:
+            httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");
                     
         } catch (CannotCreateMainTableException ex) {
             LOGGER.log(
