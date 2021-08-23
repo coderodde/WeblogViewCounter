@@ -1,4 +1,4 @@
-package com.github.coderodde.weblog.viewcounter;
+package com.github.coderodde.weblog.viewcounter.exceptions;
 
 /**
  * This class implements the checked exception type for reporting the situation

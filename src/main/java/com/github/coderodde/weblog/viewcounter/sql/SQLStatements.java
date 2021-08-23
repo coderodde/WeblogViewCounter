@@ -1,4 +1,4 @@
-package com.github.coderodde.weblog.viewcounter;
+package com.github.coderodde.weblog.viewcounter.sql;
 
 /**
  * This class defines all the SQL statements in the application.

@@ -1,4 +1,4 @@
-package com.github.coderodde.weblog.viewcounter;
+package com.github.coderodde.weblog.viewcounter.sql;
 
 /**
  * This class defines the database table schemas.

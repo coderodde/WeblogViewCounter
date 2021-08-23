@@ -1,6 +1,11 @@
 package com.github.coderodde.weblog.viewcounter;
 
+import com.github.coderodde.weblog.viewcounter.exceptions.CannotAddViewException;
+import com.github.coderodde.weblog.viewcounter.exceptions.CannotCreateMainTableException;
+
 import static com.github.coderodde.weblog.viewcounter.Utils.objs;
+import com.github.coderodde.weblog.viewcounter.exceptions.CannotGetMostRecenetViewTimeException;
+import com.github.coderodde.weblog.viewcounter.exceptions.CannotGetNumberOfViewsException;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -33,17 +38,21 @@ public final class CountViewServlet extends HttpServlet {
                           HttpServletResponse httpServletResponse) 
     throws ServletException, IOException {
         DataAccessObject dataAccessObject = DataAccessObject.getInstance();
-        JSONResponseObject jsonResponseObject = null;
+        JSONResponseObject jsonResponseObject = new JSONResponseObject();
+        jsonResponseObject.succeeded = false;
         
         try {
             dataAccessObject.createTablesIfNeeded();
-            dataAccessObject.addView(httpServletRequest); 
-            jsonResponseObject = dataAccessObject.getViewCount();
-            ZonedDateTime mostRecentViewZonedDateTime = 
+            ZonedDateTime mostRecentViewTime = 
                     dataAccessObject.getMostRecentViewTime();
             
-            jsonResponseObject.mostRecentViewTime = 
-                    mostRecentViewZonedDateTime.toString();
+            jsonResponseObject.mostRecentViewTime =
+                    mostRecentViewTime.toString();
+            
+            dataAccessObject.addView(httpServletRequest); 
+            jsonResponseObject.numberOfViews = dataAccessObject.getViewCount();
+            
+            jsonResponseObject.succeeded = true;
                     
         } catch (CannotCreateMainTableException ex) {
             LOGGER.log(
@@ -52,11 +61,25 @@ public final class CountViewServlet extends HttpServlet {
                     objs(ex.getCause().getMessage(), 
                          ex.getCause().getCause()));
             
-            jsonResponseObject = new JSONResponseObject();
         } catch (CannotAddViewException ex) {
             LOGGER.log(
                     Level.SEVERE, 
                     "Could not add a view: {0}, caused by: {1}", 
+                    objs(ex.getCause().getMessage(), 
+                         ex.getCause().getCause()));
+            
+        } catch (CannotGetMostRecenetViewTimeException ex) {
+            LOGGER.log(
+                    Level.SEVERE, 
+                    "Could not get the most recent view time: {0}, " + 
+                            "caused by: {1}", 
+                    objs(ex.getCause().getMessage(), 
+                         ex.getCause().getCause()));
+            
+        } catch (CannotGetNumberOfViewsException ex) {
+            LOGGER.log(
+                    Level.SEVERE, 
+                    "Could not get the number of views: {0}, caused by: {1}", 
                     objs(ex.getCause().getMessage(), 
                          ex.getCause().getCause()));
         }

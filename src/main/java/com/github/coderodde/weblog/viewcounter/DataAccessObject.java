@@ -1,5 +1,10 @@
 package com.github.coderodde.weblog.viewcounter;
 
+import com.github.coderodde.weblog.viewcounter.sql.SQLStatements;
+import com.github.coderodde.weblog.viewcounter.exceptions.CannotAddViewException;
+import com.github.coderodde.weblog.viewcounter.exceptions.CannotCreateMainTableException;
+import com.github.coderodde.weblog.viewcounter.exceptions.CannotGetMostRecenetViewTimeException;
+import com.github.coderodde.weblog.viewcounter.exceptions.CannotGetNumberOfViewsException;
 import static com.github.coderodde.weblog.viewcounter.Utils.objs;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -103,9 +108,7 @@ public final class DataAccessObject {
     /**
      * Returns the total number of views. 
      */
-    public JSONResponseObject getViewCount() {
-        JSONResponseObject jsonResponseObject = new JSONResponseObject();
-        
+    public int getViewCount() throws CannotGetNumberOfViewsException {
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement()) {
             
@@ -121,19 +124,15 @@ public final class DataAccessObject {
                             "Could not read the number of views.");
                 }
                 
-                int numberOfViews = resultSet.getInt(1);
-                
-                jsonResponseObject.succeeded = true;
-                jsonResponseObject.numberOfViews = numberOfViews;
+                return resultSet.getInt(1);
             }
-        } catch (SQLException | URISyntaxException ex) {
-            jsonResponseObject.succeeded = false;
+        } catch (Exception ex) {
+            throw new CannotGetNumberOfViewsException(ex);
         }
-        
-        return jsonResponseObject;
     }
     
-    public ZonedDateTime getMostRecentViewTime() {
+    public ZonedDateTime getMostRecentViewTime() 
+            throws CannotGetMostRecenetViewTimeException {
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement()) {
             
@@ -159,13 +158,7 @@ public final class DataAccessObject {
             }
             
         } catch (SQLException | URISyntaxException ex) {
-            LOGGER.log(
-                    Level.SEVERE, 
-                    "Could not obtain the most recent view time: {0}, " + 
-                            "caused by: {1}", 
-                    objs(ex.getMessage(), ex.getCause()));
-            
-            return null;
+            throw new CannotGetMostRecenetViewTimeException(ex);
         }
     }
     

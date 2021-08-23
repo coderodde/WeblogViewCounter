@@ -1,4 +1,4 @@
-package com.github.coderodde.weblog.viewcounter;
+package com.github.coderodde.weblog.viewcounter.exceptions;
 
 /**
  * This checked exception class defines the type for reporting failed view count
