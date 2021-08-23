@@ -56,6 +56,11 @@ public final class SQLDefinitions {
             public static final String TYPE = "INT NOT NULL";
         }
         
+        public static final class UserName {
+            public static final String NAME = "user_name";
+            public static final String TYPE = "VARCHAR(256)";
+        }
+        
         /**
          * This class defines the view timestamp.
          */

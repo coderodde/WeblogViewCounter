@@ -8,9 +8,9 @@ package com.github.coderodde.weblog.viewcounter;
  * @version 1.6 (Aug 22, 2021)
  * @since 1.6 (Aug 22, 2021)
  */
-public class CannotCreateMainTableException extends Exception {
+public final class CannotCreateMainTableException extends Exception {
     
-    public CannotCreateMainTableException(String message, Exception cause) {
-        super(message, cause);
+    public CannotCreateMainTableException(Exception cause) {
+        super(cause);
     }
 }

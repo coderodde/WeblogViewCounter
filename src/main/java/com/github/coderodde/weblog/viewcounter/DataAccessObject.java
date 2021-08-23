@@ -14,10 +14,8 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javassist.CannotCompileException;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.tomcat.jdbc.pool.DataSource;
-import org.apache.tomcat.jdbc.pool.PoolProperties;
 
 /**
  * This class implements the data access object for the view counter.
@@ -31,6 +29,7 @@ public final class DataAccessObject {
             Logger.getLogger(DataAccessObject.class.getName());
     
     private static final String EUROPE_HELSINKI_ZONE_ID = "Europe/Helsinki";
+    private static final ZoneId ZONE_ID = ZoneId.of(EUROPE_HELSINKI_ZONE_ID);
     
     private static final String DB_URL_ENVIRONMENT_VARIABLE_NAME = 
             "CLEARDB_DATABASE_URL";
@@ -48,21 +47,10 @@ public final class DataAccessObject {
         
         String username = databaseURI.getUserInfo().split(":")[0];
         String password = databaseURI.getUserInfo().split(":")[1];
-        String databaseURL = "jdbc:mysql://" + databaseURI.getHost() + databaseURI.getPath();
+        String databaseURL = 
+                "jdbc:mysql://" + databaseURI.getHost() + databaseURI.getPath();
         
         return DriverManager.getConnection(databaseURL, username, password);
-        
-//        try {
-//            return dataSource.getConnection();
-//        } catch (SQLException ex) {
-//            LOGGER.log(
-//                    Level.SEVERE, 
-//                    "Could not create a database connection: {0}, " +
-//                            "caused by: {1}", 
-//                    objs(ex.getMessage(), ex.getCause()));
-//            
-//            throw ex;
-//        }
     }
     
     /**
@@ -71,7 +59,7 @@ public final class DataAccessObject {
      * @throws CannotCreateMainTableException if cannot create the table.
      */
     public void createTablesIfNeeded() throws CannotCreateMainTableException {
-        createMainTableIfNeeded();
+        createMainTableIfDoesNotExist();
     }
     
     /**
@@ -81,7 +69,7 @@ public final class DataAccessObject {
      * @throws SQLException if the SQL layer fails.
      */
     public void addView(HttpServletRequest httpServletRequest) 
-            throws SQLException, URISyntaxException {
+            throws CannotAddViewException {
         
         String host = httpServletRequest.getRemoteHost();
         int port = httpServletRequest.getRemotePort();
@@ -94,20 +82,21 @@ public final class DataAccessObject {
         try (Connection connection = getConnection();
              PreparedStatement statement =
                      connection.prepareStatement(
-                             SQLStatements.MainTable.Insert.INSERT_VIEW)) {
+                             SQLStatements.ViewTable.Insert.INSERT_VIEW)) {
             
             statement.setString(1, remoteAddress);
             statement.setString(2, host);
             statement.setInt(3, port);
             
-            ZonedDateTime nowZonedDateTime = 
-                    ZonedDateTime.now(ZoneId.of(EUROPE_HELSINKI_ZONE_ID));
+            ZonedDateTime nowZonedDateTime = ZonedDateTime.now(ZONE_ID);
             
             Timestamp nowTimestamp = 
                     Timestamp.from(nowZonedDateTime.toInstant());
             
             statement.setTimestamp(4, nowTimestamp);
             statement.executeUpdate();
+        } catch (Exception cause) {
+            throw new CannotAddViewException(cause);
         }
     }
     
@@ -123,7 +112,7 @@ public final class DataAccessObject {
             try (ResultSet resultSet =
                     statement.executeQuery(
                             SQLStatements
-                                    .MainTable
+                                    .ViewTable
                                     .Select
                                     .GET_NUMBER_OF_VIEWS)) {
                 
@@ -134,51 +123,51 @@ public final class DataAccessObject {
                 
                 int numberOfViews = resultSet.getInt(1);
                 
-                jsonResponseObject.succeeeded = true;
+                jsonResponseObject.succeeded = true;
                 jsonResponseObject.numberOfViews = numberOfViews;
             }
-        } catch (SQLException ex) {
-            jsonResponseObject.succeeeded = false;
-        } catch (URISyntaxException ex) {
-            jsonResponseObject.succeeeded = false;
+        } catch (SQLException | URISyntaxException ex) {
+            jsonResponseObject.succeeded = false;
         }
         
         return jsonResponseObject;
     }
     
-//    private static void initializeDataSource() {
-//        
-//        PoolProperties p = new PoolProperties();
-//        p.setCommitOnReturn(true);
-//        p.setDefaultAutoCommit(true);
-//        p.setDriverClassName("com.mysql.cj.jdbc.Driver");
-//        p.setFairQueue(true);
-//        p.setMaxActive(5);
-//        p.setMaxAge(10000_000L);
-//        p.setMaxIdle(5);
-//        p.setMaxWait(600000_000);
-//        p.setMinEvictableIdleTimeMillis(60000_000);
-//        p.setMinIdle(0);
-//        p.setRemoveAbandoned(true);
-//        p.setRemoveAbandonedTimeout(6000);
-//        p.setLogAbandoned(true);
-//        p.setSuspectTimeout(3000000);
-//        p.setTestOnBorrow(false);
-//        p.setTestOnConnect(false);
-//        p.setTestOnReturn(false);
-//        p.setTestWhileIdle(true);
-//        
-//        String url = "jdbc:" + System.getenv(DB_URL_ENVIRONMENT_VARIABLE_NAME);
-//        
-//        p.setUrl(url);
-//        p.setUseDisposableConnectionFacade(false);
-//        p.setUseLock(false);
-//        p.setUseStatementFacade(false);
-//        p.setValidationQuery("SELECT 1");
-//        p.setValidationQueryTimeout(-1); // This is the default value.
-//        
-//        dataSource.setPoolProperties(p);
-//    } 
+    public ZonedDateTime getMostRecentViewTime() {
+        try (Connection connection = getConnection();
+             Statement statement = connection.createStatement()) {
+            
+            try (ResultSet resultSet = 
+                    statement.executeQuery(
+                            SQLStatements
+                                    .ViewTable
+                                    .Select
+                                    .GET_MOST_RECENT_VIEW_TIME)) {
+                
+                if (!resultSet.next()) {
+                    LOGGER.log(Level.SEVERE, "No most recent views.");
+                    return null;
+                }
+                
+                Timestamp mostRecentViewTimestamp = resultSet.getTimestamp(1);
+                ZonedDateTime mostRecentViewZonedDateTime =
+                        ZonedDateTime.ofInstant(
+                                mostRecentViewTimestamp.toInstant(), 
+                                ZONE_ID);
+                
+                return mostRecentViewZonedDateTime;
+            }
+            
+        } catch (SQLException | URISyntaxException ex) {
+            LOGGER.log(
+                    Level.SEVERE, 
+                    "Could not obtain the most recent view time: {0}, " + 
+                            "caused by: {1}", 
+                    objs(ex.getMessage(), ex.getCause()));
+            
+            return null;
+        }
+    }
     
     private static void loadJDBCDriverClass() {
         try {
@@ -219,17 +208,16 @@ public final class DataAccessObject {
     }
     
     static {
-//        initializeDataSource();
         loadJDBCDriverClass();
     }
     
-    private void createMainTableIfNeeded()
+    private void createMainTableIfDoesNotExist()
             throws CannotCreateMainTableException {
         
         try (Connection connection = getConnection()) {
             connection.createStatement()
                       .executeUpdate(SQLStatements
-                                      .MainTable
+                                      .ViewTable
                                       .Create
                                       .CREATE_MAIN_TABLE);
             
@@ -239,25 +227,14 @@ public final class DataAccessObject {
                     "The SQL layer failed: {0}, caused by: {1}", 
                     objs(cause.getMessage(), cause.getCause()));
             
-            CannotCreateMainTableException ex = 
-                    new CannotCreateMainTableException(
-                            "Cannot create the main table 'view'.", 
-                            cause);
-            
-            throw ex;
+            throw new CannotCreateMainTableException(cause);
         } catch (URISyntaxException cause) {
             LOGGER.log(
                     Level.SEVERE, 
                     "URI failed: {0}, caused by: {1}", 
                     objs(cause.getMessage(), cause.getCause()));
             
-            CannotCreateMainTableException ex = 
-                    new CannotCreateMainTableException(
-                            "Cannot create the main table '" + 
-                                    SQLDefinitions.ViewTable.NAME + 
-                                    "'.", cause);
-            
-            throw ex;
+            throw new CannotCreateMainTableException(cause);
         }
     }
 }

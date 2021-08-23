@@ -12,7 +12,7 @@ public final class SQLStatements {
     /**
      * The statements for the main table.
      */
-    public static final class MainTable {
+    public static final class ViewTable {
         
         /**
          * The create table statements.
@@ -24,9 +24,9 @@ public final class SQLStatements {
              * in the database.
              */
             public static final String CREATE_MAIN_TABLE = 
-                    "CREATE TABLE IF NOT EXISTS `" + 
+                    "CREATE TABLE IF NOT EXISTS " + 
                     SQLDefinitions.ViewTable.NAME + 
-                    "` (\n" +
+                    " (\n" +
                     SQLDefinitions.ViewTable.Id.NAME + " " +
                     SQLDefinitions.ViewTable.Id.TYPE + ",\n" +
                     SQLDefinitions.ViewTable.IPAddress.NAME + " " + 
@@ -35,9 +35,13 @@ public final class SQLStatements {
                     SQLDefinitions.ViewTable.HostName.TYPE + ",\n" +
                     SQLDefinitions.ViewTable.PortNumber.NAME + " " +
                     SQLDefinitions.ViewTable.PortNumber.TYPE + ",\n" +
+                    SQLDefinitions.ViewTable.UserName.NAME + " " + 
+                    SQLDefinitions.ViewTable.UserName.TYPE + ",\n" +
                     SQLDefinitions.ViewTable.ViewTimestamp.NAME + " " + 
                     SQLDefinitions.ViewTable.ViewTimestamp.TYPE + ",\n" +
-                    "PRIMARY KEY (" + SQLDefinitions.ViewTable.Id.NAME + "));";
+                    "PRIMARY KEY (" + SQLDefinitions.ViewTable.Id.NAME + ")) " +
+                    "ENGINE=InnoDB DEFAULT CHARSET=utf8 DEFAULT COLLATE " + 
+                    "utf8_unicode_ci;;";
                     
         }
         
@@ -69,6 +73,14 @@ public final class SQLStatements {
             public static final String GET_NUMBER_OF_VIEWS = 
                     "SELECT COUNT(*) FROM `" + SQLDefinitions.ViewTable.NAME +
                     "`;";
+            
+            /**
+             * Returns the most recent view time.
+             */
+            public static final String GET_MOST_RECENT_VIEW_TIME = 
+                    "SELECT MAX(" + 
+                    SQLDefinitions.ViewTable.ViewTimestamp.NAME + ") FROM " +
+                    SQLDefinitions.ViewTable.NAME + ";";
         }
     }
 }

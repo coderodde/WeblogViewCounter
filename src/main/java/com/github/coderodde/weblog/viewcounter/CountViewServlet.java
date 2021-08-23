@@ -4,8 +4,7 @@ import static com.github.coderodde.weblog.viewcounter.Utils.objs;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.net.URISyntaxException;
-import java.sql.SQLException;
+import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.servlet.ServletException;
@@ -40,18 +39,25 @@ public final class CountViewServlet extends HttpServlet {
             dataAccessObject.createTablesIfNeeded();
             dataAccessObject.addView(httpServletRequest); 
             jsonResponseObject = dataAccessObject.getViewCount();
-        } catch (SQLException ex) {
-            jsonResponseObject = new JSONResponseObject();
+            ZonedDateTime mostRecentViewZonedDateTime = 
+                    dataAccessObject.getMostRecentViewTime();
+            
+            jsonResponseObject.mostRecentViewTime = mostRecentViewZonedDateTime;
+                    
         } catch (CannotCreateMainTableException ex) {
             LOGGER.log(
                     Level.SEVERE, 
                     "Could not create the main table: {0}, caused by: {1}", 
-                    objs(ex.getMessage(), 
-                         ex.getCause().getMessage()));
+                    objs(ex.getCause().getMessage(), 
+                         ex.getCause().getCause()));
             
             jsonResponseObject = new JSONResponseObject();
-        } catch (URISyntaxException ex) {
-            
+        } catch (CannotAddViewException ex) {
+            LOGGER.log(
+                    Level.SEVERE, 
+                    "Could not add a view: {0}, caused by: {1}", 
+                    objs(ex.getCause().getMessage(), 
+                         ex.getCause().getCause()));
         }
         
         try (PrintWriter printWriter = httpServletResponse.getWriter()) {
