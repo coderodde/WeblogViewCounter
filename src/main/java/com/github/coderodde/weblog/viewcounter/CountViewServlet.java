@@ -37,6 +37,9 @@ public final class CountViewServlet extends HttpServlet {
     protected void doPost(HttpServletRequest httpServletRequest,
                           HttpServletResponse httpServletResponse) 
     throws ServletException, IOException {
+        // Allow the weblog page to get the response from this servlet:
+        httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");
+        
         DataAccessObject dataAccessObject = DataAccessObject.getInstance();
         JSONResponseObject jsonResponseObject = new JSONResponseObject();
         jsonResponseObject.succeeded = false;
@@ -46,8 +49,10 @@ public final class CountViewServlet extends HttpServlet {
             ZonedDateTime mostRecentViewTime = 
                     dataAccessObject.getMostRecentViewTime();
             
-            jsonResponseObject.mostRecentViewTime =
-                    mostRecentViewTime.toString();
+            if (mostRecentViewTime != null) {
+                jsonResponseObject.mostRecentViewTime =
+                        mostRecentViewTime.toString();
+            }
             
             dataAccessObject.addView(httpServletRequest); 
             jsonResponseObject.numberOfViews = dataAccessObject.getViewCount();
@@ -55,8 +60,6 @@ public final class CountViewServlet extends HttpServlet {
             // Mark as successful:
             jsonResponseObject.succeeded = true;
             
-            // Allow the weblog page to get the response from this servlet:
-            httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");
                     
         } catch (CannotCreateMainTableException ex) {
             LOGGER.log(

@@ -164,11 +164,15 @@ public final class DataAccessObject {
                                     .GET_MOST_RECENT_VIEW_TIME)) {
                 
                 if (!resultSet.next()) {
-                    LOGGER.log(Level.SEVERE, "No most recent views.");
                     return null;
                 }
                 
                 Timestamp mostRecentViewTimestamp = resultSet.getTimestamp(1);
+                
+                if (mostRecentViewTimestamp == null) {
+                    return null;
+                }
+                
                 ZonedDateTime mostRecentViewZonedDateTime =
                         ZonedDateTime.ofInstant(
                                 mostRecentViewTimestamp.toInstant(), 
