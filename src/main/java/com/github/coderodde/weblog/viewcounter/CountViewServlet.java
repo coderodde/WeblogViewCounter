@@ -38,7 +38,8 @@ public final class CountViewServlet extends HttpServlet {
                           HttpServletResponse httpServletResponse) 
     throws ServletException, IOException {
         // Allow the weblog page to get the response from this servlet:
-        httpServletResponse.setHeader("Access-Control-Allow-Origin", "*");
+        httpServletResponse.setHeader("Access-Control-Allow-Origin", 
+                                      "coderodde.github.io");
         
         DataAccessObject dataAccessObject = DataAccessObject.getInstance();
         JSONResponseObject jsonResponseObject = new JSONResponseObject();
