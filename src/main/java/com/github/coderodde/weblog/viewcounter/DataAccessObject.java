@@ -1,11 +1,7 @@
 package com.github.coderodde.weblog.viewcounter;
 
+import static com.github.coderodde.weblog.viewcounter.Util.objects;
 import com.github.coderodde.weblog.viewcounter.sql.SQLStatements;
-import com.github.coderodde.weblog.viewcounter.exceptions.CannotAddViewException;
-import com.github.coderodde.weblog.viewcounter.exceptions.CannotCreateMainTableException;
-import com.github.coderodde.weblog.viewcounter.exceptions.CannotGetMostRecenetViewTimeException;
-import com.github.coderodde.weblog.viewcounter.exceptions.CannotGetNumberOfViewsException;
-import static com.github.coderodde.weblog.viewcounter.Utils.objs;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.Connection;
@@ -19,6 +15,7 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.enterprise.context.RequestScoped;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.tomcat.jdbc.pool.DataSource;
 
@@ -28,7 +25,8 @@ import org.apache.tomcat.jdbc.pool.DataSource;
  * @author Rodion "rodde" Efremov
  * @version 1.6 (Aug 22, 2021)
  */
-public final class DataAccessObject {
+@RequestScoped
+public class DataAccessObject {
 
     private static final Logger LOGGER = 
             Logger.getLogger(DataAccessObject.class.getName());
@@ -49,9 +47,10 @@ public final class DataAccessObject {
     /**
      * Makes sure that the main table is created.
      * 
-     * @throws CannotCreateMainTableException if cannot create the table.
+     * @throws java.sql.SQLException if the SQL layer fails.
+     * @throws java.net.URISyntaxException if the DB URI is invalid.
      */
-    public void createTablesIfNeeded() throws CannotCreateMainTableException {
+    public void createTablesIfNeeded() throws SQLException, URISyntaxException {
 
         try (Connection connection = getConnection()) {
             connection.createStatement()
@@ -60,32 +59,19 @@ public final class DataAccessObject {
                                       .Create
                                       .CREATE_MAIN_TABLE);
 
-        } catch (SQLException cause) {
-            LOGGER.log(
-                    Level.SEVERE, 
-                    "The SQL layer failed: {0}, caused by: {1}", 
-                    objs(cause.getMessage(), cause.getCause()));
-
-            throw new CannotCreateMainTableException(cause);
-        } catch (URISyntaxException cause) {
-            LOGGER.log(
-                    Level.SEVERE, 
-                    "URI failed: {0}, caused by: {1}", 
-                    objs(cause.getMessage(), cause.getCause()));
-
-            throw new CannotCreateMainTableException(cause);
-        }
+        } 
     }
 
     /**
      * Adds a new view data to the database.
      * 
      * @param httpServletRequest the request object.
-     * @throws com.github.coderodde.weblog.viewcounter.exceptions.CannotAddViewException
-     * if adding a view data fails.
+     * 
+     * @throws java.sql.SQLException if the SQL layer fails.
+     * @throws java.net.URISyntaxException if the DB URI is invalid.
      */
-    public void addView(HttpServletRequest httpServletRequest) 
-            throws CannotAddViewException {
+    public void addView(HttpServletRequest httpServletRequest)
+            throws SQLException, URISyntaxException {
 
         String host = httpServletRequest.getRemoteHost();
         int port = httpServletRequest.getRemotePort();
@@ -111,18 +97,18 @@ public final class DataAccessObject {
 
             statement.setTimestamp(4, nowTimestamp);
             statement.executeUpdate();
-        } catch (Exception cause) {
-            throw new CannotAddViewException(cause);
         }
     }
 
     /**
      * Returns the total number of views. 
+     * 
      * @return the total number of views so far.
-     * @throws com.github.coderodde.weblog.viewcounter.exceptions.CannotGetNumberOfViewsException
-     * if cannot get the number of views.
+     * 
+     * @throws java.sql.SQLException if the SQL layer fails.
+     * @throws java.net.URISyntaxException if the DB URI is invalid.
      */
-    public int getViewCount() throws CannotGetNumberOfViewsException {
+    public int getViewCount() throws SQLException, URISyntaxException {
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement()) {
 
@@ -140,19 +126,18 @@ public final class DataAccessObject {
 
                 return resultSet.getInt(1);
             }
-        } catch (Exception ex) {
-            throw new CannotGetNumberOfViewsException(ex);
-        }
+        } 
     }
 
     /**
      * Returns the most recent view time stamp.
      * @return the most recent view time.
-     * @throws CannotGetMostRecenetViewTimeException if reading the most recent
-     * view time fails.
+     * 
+     * @throws java.sql.SQLException if the SQL layer fails.
+     * @throws java.net.URISyntaxException if the DB URI is invalid.
      */
     public ZonedDateTime getMostRecentViewTime() 
-            throws CannotGetMostRecenetViewTimeException {
+            throws SQLException, URISyntaxException {
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement()) {
 
@@ -180,9 +165,6 @@ public final class DataAccessObject {
 
                 return mostRecentViewZonedDateTime;
             }
-
-        } catch (SQLException | URISyntaxException ex) {
-            throw new CannotGetMostRecenetViewTimeException(ex);
         }
     }
 
@@ -194,7 +176,7 @@ public final class DataAccessObject {
                     Level.SEVERE, 
                     "com.mysql.cj.jdbc.Driver class not found: {0}, " + 
                             "caused by: {1}", 
-                    objs(ex, ex.getCause()));
+                    objects(ex, ex.getCause()));
 
             throw new RuntimeException(
                     "com.mysql.cj.jdbc.Driver not found.", 
@@ -205,7 +187,7 @@ public final class DataAccessObject {
                     Level.SEVERE, 
                     "com.mysql.cj.jdbc.Driver could not be instantiated: {0}," +
                             " caused by: {1}", 
-                    objs(ex, ex.getCause()));
+                    objects(ex, ex.getCause()));
 
             throw new RuntimeException(
                     "com.mysql.cj.jdbc.Driver could not be instantiated.", 
@@ -216,7 +198,7 @@ public final class DataAccessObject {
                     Level.SEVERE, 
                     "com.mysql.cj.jdbc.Driver could not be accessed: {0}, " + 
                             "caused by: {1}", 
-                    objs(ex, ex.getCause()));
+                    objects(ex, ex.getCause()));
 
             throw new RuntimeException(
                     "com.mysql.cj.jdbc.Driver could not be accessed.", 

@@ -7,7 +7,7 @@ package com.github.coderodde.weblog.viewcounter;
  * @version 1.6 (Aug 22, 2021)
  * @since 1.6 (Aug 22, 2021)
  */
-public final class JSONResponseObject {
+public class JSONResponseObject {
 
     public boolean succeeded;
     public int numberOfViews;

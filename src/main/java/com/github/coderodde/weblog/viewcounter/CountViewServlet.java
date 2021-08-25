@@ -1,17 +1,14 @@
 package com.github.coderodde.weblog.viewcounter;
 
-import com.github.coderodde.weblog.viewcounter.exceptions.CannotAddViewException;
-import com.github.coderodde.weblog.viewcounter.exceptions.CannotCreateMainTableException;
-
-import static com.github.coderodde.weblog.viewcounter.Utils.objs;
-import com.github.coderodde.weblog.viewcounter.exceptions.CannotGetMostRecenetViewTimeException;
-import com.github.coderodde.weblog.viewcounter.exceptions.CannotGetNumberOfViewsException;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.net.URISyntaxException;
+import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -27,11 +24,13 @@ import javax.servlet.http.HttpServletResponse;
  * @since 1.6 (Aug 21, 2021)
  */
 @WebServlet(name="CountViewServlet", urlPatterns={"/countView"})
-public final class CountViewServlet extends HttpServlet {
+public class CountViewServlet extends HttpServlet {
 
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER =
             Logger.getLogger(CountViewServlet.class.getName());
+    
+    @Inject private DataAccessObject dataAccessObject;
 
     @Override
     protected void doPost(HttpServletRequest httpServletRequest,
@@ -41,7 +40,6 @@ public final class CountViewServlet extends HttpServlet {
         httpServletResponse.setHeader("Access-Control-Allow-Origin", 
                                       "coderodde.github.io");
 
-        DataAccessObject dataAccessObject = DataAccessObject.getInstance();
         JSONResponseObject jsonResponseObject = new JSONResponseObject();
         jsonResponseObject.succeeded = false;
 
@@ -60,40 +58,25 @@ public final class CountViewServlet extends HttpServlet {
 
             // Mark as successful:
             jsonResponseObject.succeeded = true;
-
-
-        } catch (CannotCreateMainTableException ex) {
+        } catch (SQLException ex) {
             LOGGER.log(
                     Level.SEVERE, 
-                    "Could not create the main table: {0}, caused by: {1}", 
-                    objs(ex.getCause().getMessage(), 
-                         ex.getCause().getCause()));
-
-        } catch (CannotAddViewException ex) {
+                    "SQL failed: {0}, caused by: {1}", 
+                    objects(ex.getMessage(), ex.getCause()));
+            
+        } catch (URISyntaxException ex) {
             LOGGER.log(
                     Level.SEVERE, 
-                    "Could not add a view: {0}, caused by: {1}", 
-                    objs(ex.getCause().getMessage(), 
-                         ex.getCause().getCause()));
-
-        } catch (CannotGetMostRecenetViewTimeException ex) {
-            LOGGER.log(
-                    Level.SEVERE, 
-                    "Could not get the most recent view time: {0}, " + 
-                            "caused by: {1}", 
-                    objs(ex.getCause().getMessage(), 
-                         ex.getCause().getCause()));
-
-        } catch (CannotGetNumberOfViewsException ex) {
-            LOGGER.log(
-                    Level.SEVERE, 
-                    "Could not get the number of views: {0}, caused by: {1}", 
-                    objs(ex.getCause().getMessage(), 
-                         ex.getCause().getCause()));
+                    "Bad DB URI: {0}, caused by: {1}", 
+                    objects(ex.getMessage(), ex.getCause()));
         }
 
         try (PrintWriter printWriter = httpServletResponse.getWriter()) {
             printWriter.print(GSON.toJson(jsonResponseObject));
         }
+    }
+    
+    private static Object[] objects(Object... objs) {
+        return objs;
     }
 }
