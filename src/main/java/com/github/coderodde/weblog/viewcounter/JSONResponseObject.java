@@ -8,7 +8,7 @@ package com.github.coderodde.weblog.viewcounter;
  * @since 1.6 (Aug 22, 2021)
  */
 public final class JSONResponseObject {
-    
+
     public boolean succeeded;
     public int numberOfViews;
     public String mostRecentViewTime;

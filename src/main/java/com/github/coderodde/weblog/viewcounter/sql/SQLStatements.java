@@ -8,17 +8,17 @@ package com.github.coderodde.weblog.viewcounter.sql;
  * @since 1.6 (Aug 22, 2021)
  */
 public final class SQLStatements {
-    
+
     /**
      * The statements for the main table.
      */
     public static final class ViewTable {
-        
+
         /**
          * The create table statements.
          */
         public static final class Create {
-            
+
             /**
              * Creates a table for storing the views unless there is one already
              * in the database.
@@ -42,14 +42,14 @@ public final class SQLStatements {
                     "PRIMARY KEY (" + SQLDefinitions.ViewTable.Id.NAME + ")) " +
                     "ENGINE=InnoDB DEFAULT CHARSET=utf8 DEFAULT COLLATE " + 
                     "utf8_unicode_ci;;";
-                    
+
         }
-        
+
         /**
          * The insert data statements. 
          */
         public static final class Insert {
-            
+
             /**
              * Inserts a new view into the database.
              */
@@ -61,19 +61,19 @@ public final class SQLStatements {
                     SQLDefinitions.ViewTable.ViewTimestamp.NAME + ") " +
                     "VALUES (?, ?, ?, ?);";
         }
-        
+
         /**
          * The select data statements.
          */
         public static final class Select {
-            
+
             /**
              * Returns the total number of views. 
              */
             public static final String GET_NUMBER_OF_VIEWS = 
                     "SELECT COUNT(*) FROM `" + SQLDefinitions.ViewTable.NAME +
                     "`;";
-            
+
             /**
              * Returns the most recent view time.
              */

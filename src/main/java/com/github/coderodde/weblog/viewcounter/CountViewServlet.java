@@ -28,11 +28,11 @@ import javax.servlet.http.HttpServletResponse;
  */
 @WebServlet(name="CountViewServlet", urlPatterns={"/countView"})
 public final class CountViewServlet extends HttpServlet {
-    
+
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER =
             Logger.getLogger(CountViewServlet.class.getName());
-    
+
     @Override
     protected void doPost(HttpServletRequest httpServletRequest,
                           HttpServletResponse httpServletResponse) 
@@ -40,42 +40,42 @@ public final class CountViewServlet extends HttpServlet {
         // Allow the weblog page to get the response from this servlet:
         httpServletResponse.setHeader("Access-Control-Allow-Origin", 
                                       "coderodde.github.io");
-        
+
         DataAccessObject dataAccessObject = DataAccessObject.getInstance();
         JSONResponseObject jsonResponseObject = new JSONResponseObject();
         jsonResponseObject.succeeded = false;
-        
+
         try {
             dataAccessObject.createTablesIfNeeded();
             ZonedDateTime mostRecentViewTime = 
                     dataAccessObject.getMostRecentViewTime();
-            
+
             if (mostRecentViewTime != null) {
                 jsonResponseObject.mostRecentViewTime =
                         mostRecentViewTime.toString();
             }
-            
+
             dataAccessObject.addView(httpServletRequest); 
             jsonResponseObject.numberOfViews = dataAccessObject.getViewCount();
-            
+
             // Mark as successful:
             jsonResponseObject.succeeded = true;
-            
-                    
+
+
         } catch (CannotCreateMainTableException ex) {
             LOGGER.log(
                     Level.SEVERE, 
                     "Could not create the main table: {0}, caused by: {1}", 
                     objs(ex.getCause().getMessage(), 
                          ex.getCause().getCause()));
-            
+
         } catch (CannotAddViewException ex) {
             LOGGER.log(
                     Level.SEVERE, 
                     "Could not add a view: {0}, caused by: {1}", 
                     objs(ex.getCause().getMessage(), 
                          ex.getCause().getCause()));
-            
+
         } catch (CannotGetMostRecenetViewTimeException ex) {
             LOGGER.log(
                     Level.SEVERE, 
@@ -83,7 +83,7 @@ public final class CountViewServlet extends HttpServlet {
                             "caused by: {1}", 
                     objs(ex.getCause().getMessage(), 
                          ex.getCause().getCause()));
-            
+
         } catch (CannotGetNumberOfViewsException ex) {
             LOGGER.log(
                     Level.SEVERE, 
@@ -91,7 +91,7 @@ public final class CountViewServlet extends HttpServlet {
                     objs(ex.getCause().getMessage(), 
                          ex.getCause().getCause()));
         }
-        
+
         try (PrintWriter printWriter = httpServletResponse.getWriter()) {
             printWriter.print(GSON.toJson(jsonResponseObject));
         }
