@@ -8,7 +8,7 @@ package com.github.coderodde.weblog.viewcounter;
  * @since 1.61 (Aug 25, 2021)
  */
 public class Util {
-    
+
     /**
      * Allows writing {@code method(arg1, ..., argn)}.
      * 

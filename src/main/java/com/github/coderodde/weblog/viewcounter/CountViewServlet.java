@@ -1,5 +1,6 @@
 package com.github.coderodde.weblog.viewcounter;
 
+import static com.github.coderodde.weblog.viewcounter.Util.objects;
 import com.google.gson.Gson;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -29,7 +30,7 @@ public class CountViewServlet extends HttpServlet {
     private static final Gson GSON = new Gson();
     private static final Logger LOGGER =
             Logger.getLogger(CountViewServlet.class.getName());
-    
+
     @Inject private DataAccessObject dataAccessObject;
 
     @Override
@@ -63,7 +64,7 @@ public class CountViewServlet extends HttpServlet {
                     Level.SEVERE, 
                     "SQL failed: {0}, caused by: {1}", 
                     objects(ex.getMessage(), ex.getCause()));
-            
+
         } catch (URISyntaxException ex) {
             LOGGER.log(
                     Level.SEVERE, 
@@ -74,9 +75,5 @@ public class CountViewServlet extends HttpServlet {
         try (PrintWriter printWriter = httpServletResponse.getWriter()) {
             printWriter.print(GSON.toJson(jsonResponseObject));
         }
-    }
-    
-    private static Object[] objects(Object... objs) {
-        return objs;
     }
 }
