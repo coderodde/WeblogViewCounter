@@ -23,7 +23,7 @@ public final class SQLStatements {
              * Creates a table for storing the views unless there is one already
              * in the database.
              */
-            public static final String CREATE_MAIN_TABLE = 
+            public static final String CREATE_VIEW_TABLE = 
                     "CREATE TABLE IF NOT EXISTS " + 
                     SQLDefinitions.ViewTable.NAME + 
                     " (\n" +
@@ -70,9 +70,18 @@ public final class SQLStatements {
             /**
              * Returns the total number of views. 
              */
-            public static final String GET_NUMBER_OF_VIEWS = 
+            public static final String GET_NUMBER_OF_TOTAL_VIEWS = 
                     "SELECT COUNT(*) FROM `" + SQLDefinitions.ViewTable.NAME +
                     "`;";
+            
+            /**
+             * Returns the number of views of a particular viewer 
+             * (by IP-address).
+             */
+            public static final String GET_NUMBER_OF_VIEWS_OF_VISITOR = 
+                    "SELECT COUNT(*) FROM `" + SQLDefinitions.ViewTable.NAME +
+                    "` WHERE " + SQLDefinitions.ViewTable.IPAddress.NAME + 
+                    " = ?;";
 
             /**
              * Returns the most recent view time.
@@ -81,6 +90,16 @@ public final class SQLStatements {
                     "SELECT MAX(" + 
                     SQLDefinitions.ViewTable.ViewTimestamp.NAME + ") FROM " +
                     SQLDefinitions.ViewTable.NAME + ";";
+            
+            /**
+             * Returns the most recent view time of a particular viewer 
+             * (by IP-address).
+             */
+            public static final String GET_MOST_RECENT_VIEW_TIME_OF_VISITOR = 
+                    "SELECT MAX(" +
+                    SQLDefinitions.ViewTable.ViewTimestamp.NAME + ") FROM " +
+                    SQLDefinitions.ViewTable.NAME + " WHERE " + 
+                    SQLDefinitions.ViewTable.IPAddress.NAME + " = ?;";
         }
     }
 }

@@ -45,6 +45,12 @@ public class CountViewServlet extends HttpServlet {
         jsonResponseObject.succeeded = false;
 
         try {
+            String ipAddress = httpServletRequest.getHeader("X-FORWARDED-FOR");
+            
+            if (ipAddress == null) {
+                ipAddress = httpServletRequest.getRemoteAddr();
+            }
+            
             dataAccessObject.createTablesIfNeeded();
             ZonedDateTime mostRecentViewTime = 
                     dataAccessObject.getMostRecentViewTime();
@@ -53,10 +59,23 @@ public class CountViewServlet extends HttpServlet {
                 jsonResponseObject.mostRecentViewTime =
                         mostRecentViewTime.toString();
             }
+            
+            ZonedDateTime visitorsMostRecentViewTime =
+                    dataAccessObject.getVisitorsMostRecentViewTime(
+                            httpServletRequest.getRemoteAddr());
 
+            if (visitorsMostRecentViewTime != null) {
+                jsonResponseObject.visitorsMostRecentViewTime =
+                        visitorsMostRecentViewTime.toString();
+            }
+            
             dataAccessObject.addView(httpServletRequest); 
-            jsonResponseObject.numberOfViews = dataAccessObject.getViewCount();
+            jsonResponseObject.numberOfTotalViews = 
+                    dataAccessObject.getTotalViewCount();
 
+            jsonResponseObject.numberOfVisitorsViews = 
+                    dataAccessObject.getVisitorsViweCount(ipAddress);
+            
             // Mark as successful:
             jsonResponseObject.succeeded = true;
         } catch (SQLException ex) {

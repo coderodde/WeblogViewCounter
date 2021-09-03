@@ -18,6 +18,7 @@ import java.util.logging.Logger;
 import javax.enterprise.context.RequestScoped;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.tomcat.jdbc.pool.DataSource;
+import org.eclipse.persistence.internal.expressions.SQLStatement;
 
 /**
  * This class implements the data access object for the view counter.
@@ -57,7 +58,7 @@ public class DataAccessObject {
                       .executeUpdate(SQLStatements
                                       .ViewTable
                                       .Create
-                                      .CREATE_MAIN_TABLE);
+                                      .CREATE_VIEW_TABLE);
 
         } 
     }
@@ -108,16 +109,15 @@ public class DataAccessObject {
      * @throws java.sql.SQLException if the SQL layer fails.
      * @throws java.net.URISyntaxException if the DB URI is invalid.
      */
-    public int getViewCount() throws SQLException, URISyntaxException {
+    public int getTotalViewCount() throws SQLException, URISyntaxException {
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement()) {
 
             try (ResultSet resultSet =
-                    statement.executeQuery(
-                            SQLStatements
+                    statement.executeQuery(SQLStatements
                                     .ViewTable
                                     .Select
-                                    .GET_NUMBER_OF_VIEWS)) {
+                                    .GET_NUMBER_OF_TOTAL_VIEWS)) {
 
                 if (!resultSet.next()) {
                     throw new IllegalStateException(
@@ -127,6 +127,29 @@ public class DataAccessObject {
                 return resultSet.getInt(1);
             }
         } 
+    }
+    
+    public int getVisitorsViweCount(String ipAddress)
+            throws SQLException, URISyntaxException {
+        try (Connection connection = getConnection();
+             PreparedStatement statement =
+                     connection.prepareStatement(
+                             SQLStatements
+                                     .ViewTable
+                                     .Select
+                                     .GET_NUMBER_OF_VIEWS_OF_VISITOR)) {
+            
+            statement.setString(1, ipAddress);
+            
+            try (ResultSet resultSet = statement.executeQuery()) {
+                if (!resultSet.next()) {
+                    throw new IllegalStateException(
+                            "Could not read the number of a visitor's views.");
+                }
+                
+                return resultSet.getInt(1);
+            }
+        }
     }
 
     /**
@@ -164,6 +187,41 @@ public class DataAccessObject {
                                 ZONE_ID);
 
                 return mostRecentViewZonedDateTime;
+            }
+        }
+    }
+    
+    public ZonedDateTime getVisitorsMostRecentViewTime(String ipAddress)
+            throws SQLException, URISyntaxException {
+        try (Connection connection = getConnection();
+             PreparedStatement statement = 
+                     connection.prepareStatement(
+                             SQLStatements
+                                     .ViewTable
+                                     .Select
+                                     .GET_MOST_RECENT_VIEW_TIME_OF_VISITOR)) {
+            
+            statement.setString(1, ipAddress);
+            
+            try (ResultSet resultSet = statement.executeQuery()) {
+                
+                if (!resultSet.next()) {
+                    return null;
+                }
+                
+                Timestamp mostRecentVisitorsViewTimeTimestamp = 
+                        resultSet.getTimestamp(1);
+                
+                if (mostRecentVisitorsViewTimeTimestamp == null) {
+                    return null;
+                }
+                
+                ZonedDateTime mostRecentVisitorViewTimeZondDateTime = 
+                        ZonedDateTime.ofInstant(
+                                mostRecentVisitorsViewTimeTimestamp.toInstant(), 
+                                ZONE_ID);
+                
+                return mostRecentVisitorViewTimeZondDateTime;
             }
         }
     }
