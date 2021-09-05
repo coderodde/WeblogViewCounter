@@ -15,10 +15,9 @@ import java.time.ZoneId;
 import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.enterprise.context.RequestScoped;
+import javax.enterprise.context.ApplicationScoped;
 import javax.servlet.http.HttpServletRequest;
 import org.apache.tomcat.jdbc.pool.DataSource;
-import org.eclipse.persistence.internal.expressions.SQLStatement;
 
 /**
  * This class implements the data access object for the view counter.
@@ -26,7 +25,7 @@ import org.eclipse.persistence.internal.expressions.SQLStatement;
  * @author Rodion "rodde" Efremov
  * @version 1.6 (Aug 22, 2021)
  */
-@RequestScoped
+@ApplicationScoped
 public class DataAccessObject {
 
     private static final Logger LOGGER = 
@@ -59,7 +58,6 @@ public class DataAccessObject {
                                       .ViewTable
                                       .Create
                                       .CREATE_VIEW_TABLE);
-
         } 
     }
 
@@ -109,7 +107,7 @@ public class DataAccessObject {
      * @throws java.sql.SQLException if the SQL layer fails.
      * @throws java.net.URISyntaxException if the DB URI is invalid.
      */
-    public int getTotalViewCount() throws SQLException, URISyntaxException {
+    public Integer getTotalViewCount() throws SQLException, URISyntaxException {
         try (Connection connection = getConnection();
              Statement statement = connection.createStatement()) {
 
@@ -129,7 +127,7 @@ public class DataAccessObject {
         } 
     }
     
-    public int getVisitorsViweCount(String ipAddress)
+    public Integer getVisitorsViweCount(String ipAddress)
             throws SQLException, URISyntaxException {
         try (Connection connection = getConnection();
              PreparedStatement statement =

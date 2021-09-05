@@ -10,8 +10,8 @@ package com.github.coderodde.weblog.viewcounter;
 public class JSONResponseObject {
 
     public boolean succeeded;
-    public int numberOfTotalViews;
-    public int numberOfVisitorsViews;
+    public Integer numberOfTotalViews;
+    public Integer numberOfVisitorsViews;
     public String mostRecentViewTime;
     public String visitorsMostRecentViewTime;
 }

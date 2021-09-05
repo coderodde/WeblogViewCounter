@@ -9,7 +9,6 @@ import java.sql.SQLException;
 import java.time.ZonedDateTime;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.inject.Inject;
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -31,15 +30,15 @@ public class CountViewServlet extends HttpServlet {
     private static final Logger LOGGER =
             Logger.getLogger(CountViewServlet.class.getName());
 
-    @Inject private DataAccessObject dataAccessObject;
+    private static final DataAccessObject dataAccessObject = 
+            DataAccessObject.getInstance();
 
     @Override
     protected void doPost(HttpServletRequest httpServletRequest,
                           HttpServletResponse httpServletResponse) 
     throws ServletException, IOException {
         // Allow the weblog page to get the response from this servlet:
-        httpServletResponse.setHeader("Access-Control-Allow-Origin", 
-                                      "coderodde.github.io");
+        httpServletResponse.setHeader("Access-Control-Allow-Origin", "*" );
 
         JSONResponseObject jsonResponseObject = new JSONResponseObject();
         jsonResponseObject.succeeded = false;
@@ -52,6 +51,7 @@ public class CountViewServlet extends HttpServlet {
             }
             
             dataAccessObject.createTablesIfNeeded();
+            
             ZonedDateTime mostRecentViewTime = 
                     dataAccessObject.getMostRecentViewTime();
 
@@ -61,8 +61,7 @@ public class CountViewServlet extends HttpServlet {
             }
             
             ZonedDateTime visitorsMostRecentViewTime =
-                    dataAccessObject.getVisitorsMostRecentViewTime(
-                            httpServletRequest.getRemoteAddr());
+                    dataAccessObject.getVisitorsMostRecentViewTime(ipAddress);
 
             if (visitorsMostRecentViewTime != null) {
                 jsonResponseObject.visitorsMostRecentViewTime =
@@ -70,6 +69,7 @@ public class CountViewServlet extends HttpServlet {
             }
             
             dataAccessObject.addView(httpServletRequest); 
+            
             jsonResponseObject.numberOfTotalViews = 
                     dataAccessObject.getTotalViewCount();
 
